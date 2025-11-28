@@ -4,6 +4,7 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/解决方案项/">
+    <File Path=".gitignore" />
     <File Path="README.md" />
   </Folder>
   <Project Path="cheapInject/cheapInject.vcxproj" Id="84d83757-0e46-4343-b464-d7e9f7b849ec" />
