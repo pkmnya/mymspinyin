@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="mymspinyin.vcxproj" Id="ae3493fa-0398-4121-981c-5b5db4291b71" />
+</Solution>
