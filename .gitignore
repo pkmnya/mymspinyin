@@ -362,5 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# 排除手动备份
+# 鎺掗櫎鎵嬪姩澶囦唤
 main.7z
