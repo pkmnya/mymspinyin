@@ -6,6 +6,7 @@
 #include <vector>
 #include <Psapi.h>
 #include "MinHook.h"
+#include <thread>
 
 #include <imm.h>
 #pragma comment(lib, "Imm32.lib")
@@ -231,6 +232,8 @@ HRESULT WINAPI Hook_Activate(void* This, DWORD dwReserved) {
 			inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
 			SendInput(2, inputs, sizeof(INPUT));
 
+
+
 			PrintDebug("Hook_Activate: SHIFT press simulated.");
 		}
 		else {
@@ -390,6 +393,8 @@ void CALLBACK WinEventProc(
 
 	if (hCurrentHkl != TARGET_HKL)
 	{
+		// 旧的方式
+		/*
 		INPUT inputs[4] = { 0 };
 		inputs[0].type = INPUT_KEYBOARD;
 		inputs[0].ki.wVk = VK_LMENU;
@@ -404,6 +409,17 @@ void CALLBACK WinEventProc(
 		inputs[3].ki.wVk = VK_LMENU;
 		inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
 		SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+		*/
+
+		//使用线程发送会出现切换混乱的问题
+		//std::thread([]() {
+			HWND hwnd = GetForegroundWindow();
+			if (hwnd) {PostMessage(hwnd, WM_INPUTLANGCHANGEREQUEST, 0, (LPARAM)TARGET_HKL);}
+			PrintDebug("PageDown Action -> EN-US (Cached HKL)");
+		//	}).detach();
+		
+
+
 	}
 }
 
