@@ -364,3 +364,4 @@ FodyWeavers.xsd
 
 # 排除手动备份
 main.7z
+/main - 副本.cpp
