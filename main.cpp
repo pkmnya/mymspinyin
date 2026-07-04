@@ -165,17 +165,19 @@ HRESULT WINAPI Hook_Activate(void* This, DWORD dwReserved) {
 	//输入法语言判断
 	const int chinese = 2052;
 	const int english = 1033;
+
+
+	//放在语言判定后面防止不触发 并不是基于性能优化 而是等待反应时间
+	static INT64 lastruntime = 0;
+	INT64 currenttime = GetTickCount64();
+	if (currenttime < lastruntime + 200) return result;
+	lastruntime = currenttime;
+
 	if (G_InputModePtr)
 	{
 		PrintDebug("Object Count Variable Address (G_InputModePtr): 0x%p Value: %u", (void*)G_InputModePtr, *G_InputModePtr);
 		if (*G_InputModePtr != chinese) return result;
 	}
-
-	//放在语言判定后面防止不触发 并不是基于性能优化 而是等待反应时间
-	static INT64 lastruntime = 0;
-	INT64 currenttime = GetTickCount64();
-	if (currenttime < lastruntime + 100) return result;
-	lastruntime = currenttime;
 
 	//上面已经判断了只有输入法是中文才继续执行
 	//这里判断拼音是中文还是英文
@@ -192,37 +194,30 @@ HRESULT WINAPI Hook_Activate(void* This, DWORD dwReserved) {
 			PrintDebug("Hook_Activate: Mode is English (0). Simulating SHIFT press...");
 			PrintDebug("--------------------------------------------------");
 
-			// 不知道为什么会显示同步balbalbalba
-			/*
+			PrintDebug("开始模拟");
+
 			HWND hwnd = GetForegroundWindow();
 			if (hwnd) {
 				HWND ime_hwnd = ImmGetDefaultIMEWnd(hwnd);
-
 				if (ime_hwnd) {
-					PrintDebug("Hook_Activate: Found HWND 0x%p, IME HWND 0x%p. Sending WM_IME_CONTROL.", hwnd, ime_hwnd);
-
-
-					const int IMC_SETCONVERSIONMODE = 0x0002;
-					SendMessageW(
+					DWORD_PTR dwResult = 0;
+					LRESULT lr = SendMessageTimeoutW(
 						ime_hwnd,
 						WM_IME_CONTROL,
-						IMC_SETCONVERSIONMODE,
-						1025 // 对应中文模式
+						0x0002,
+						LPARAM(1025),
+						SMTO_ABORTIFHUNG | SMTO_NORMAL,
+						80, // 未开启高精度时钟模式时,不超过100ms轮询间隔下的安全值 100-16 = 84
+						&dwResult
 					);
-
-					PrintDebug("Hook_Activate: WM_IME_CONTROL (Chinese Mode) message sent.");
-
-				}
-				else {
-					PrintDebug("Hook_Activate: Warning - ImmGetDefaultIMEWnd failed (No IME window).");
 				}
 			}
-			else {
-				PrintDebug("Hook_Activate: Warning - GetForegroundWindow failed (No foreground window).");
-			}
 
-			*/
+			PrintDebug("模拟结束");
+			
 
+			
+			/*
 			INPUT inputs[2] = { 0 };
 			inputs[0].type = INPUT_KEYBOARD;
 			inputs[0].ki.wVk = VK_SHIFT;
@@ -231,7 +226,7 @@ HRESULT WINAPI Hook_Activate(void* This, DWORD dwReserved) {
 			inputs[1].ki.wVk = VK_SHIFT;
 			inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
 			SendInput(2, inputs, sizeof(INPUT));
-
+			*/
 
 
 			PrintDebug("Hook_Activate: SHIFT press simulated.");
@@ -393,33 +388,9 @@ void CALLBACK WinEventProc(
 
 	if (hCurrentHkl != TARGET_HKL)
 	{
-		// 旧的方式
-		/*
-		INPUT inputs[4] = { 0 };
-		inputs[0].type = INPUT_KEYBOARD;
-		inputs[0].ki.wVk = VK_LMENU;
-		inputs[0].ki.dwFlags = 0;
-		inputs[1].type = INPUT_KEYBOARD;
-		inputs[1].ki.wVk = VK_LSHIFT;
-		inputs[1].ki.dwFlags = 0;
-		inputs[2].type = INPUT_KEYBOARD;
-		inputs[2].ki.wVk = VK_LSHIFT;
-		inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
-		inputs[3].type = INPUT_KEYBOARD;
-		inputs[3].ki.wVk = VK_LMENU;
-		inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
-		SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
-		*/
-
-		//使用线程发送会出现切换混乱的问题
-		//std::thread([]() {
-			HWND hwnd = GetForegroundWindow();
-			if (hwnd) {PostMessage(hwnd, WM_INPUTLANGCHANGEREQUEST, 0, (LPARAM)TARGET_HKL);}
-			PrintDebug("PageDown Action -> EN-US (Cached HKL)");
-		//	}).detach();
-		
-
-
+		HWND hwnd = GetForegroundWindow();
+		if (hwnd) {PostMessage(hwnd, WM_INPUTLANGCHANGEREQUEST, 0, (LPARAM)TARGET_HKL);}
+		PrintDebug("PageDown Action -> EN-US (Cached HKL)");
 	}
 }
 
